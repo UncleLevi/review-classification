@@ -221,11 +221,6 @@ def inject_styles() -> None:
             font-size: 14px;
         }
 
-        /* Native accent-color: works on all Streamlit versions */
-        [data-testid="stRadio"] input[type="radio"] {
-            accent-color: #2F5D50 !important;
-        }
-
         /* Mengubah warna border luar saat dipilih */
         div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] > div:first-child,
         [data-testid="stRadio"] input[type="radio"]:checked + div > div,
@@ -260,24 +255,21 @@ def inject_styles() -> None:
         }
 
         /* ── Inputs ── */
-        /* textarea base — target both old and new Streamlit wrapper names */
-        div[data-testid="stTextArea"] textarea,
-        div[data-testid="stTextAreaRootElement"] textarea {
+        div[data-baseweb="textarea"] {
             border-radius: 6px !important;
             border: 1px solid #E5E5E5 !important;
             background: #FFFFFF !important;
+        }
+        div[data-baseweb="textarea"]:focus-within {
+            border-color: #2F5D50 !important;
+            box-shadow: 0 0 0 2px rgba(47,93,80,0.8) !important;
+        }
+        div[data-testid="stTextArea"] textarea {
             font-size: 16px !important;
             color: #1A1A1A !important;
-            -webkit-appearance: none;
-        }
-        /* textarea focus ring */
-        div[data-testid="stTextArea"] textarea:focus,
-        div[data-testid="stTextAreaRootElement"] textarea:focus,
-        div[data-testid="stTextArea"]:focus-within,
-        div[data-testid="stTextAreaRootElement"]:focus-within {
-            border-color: #2F5D50 !important;
-            box-shadow: 0 0 0 2px rgba(47,93,80,0.12) !important;
-            outline: none !important;
+            border: none !important;
+            background: transparent !important;
+            padding: 8px 12px !important;
         }
         .stSelectbox div[data-baseweb="select"] > div {
             border-radius: 6px !important;
@@ -285,7 +277,6 @@ def inject_styles() -> None:
             background: #FFFFFF !important;
             font-size: 16px !important;
         }
-
 
         /* ── Buttons ── */
         .stButton > button {
@@ -397,23 +388,17 @@ def inject_styles() -> None:
         }
 
         /* ── Progress bar ── */
-        .custom-progress-wrap {
-            background: #E5E5E5;
-            border-radius: 4px;
-            height: 8px;
-            width: 100%;
-            margin-top: 6px;
+        [data-testid="stProgressBar"] {
+            border-radius: 4px !important;
         }
-        .custom-progress-fill {
-            background: #1A1A1A;
-            border-radius: 4px;
-            height: 8px;
+        [data-testid="stProgressBar"] > div > div > div > div {
+            background-color: #1A1A1A !important;
         }
-        .custom-progress-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #1A1A1A;
-            margin-top: 4px;
+        .stProgress > div > div > div > div {
+            background-color: #1A1A1A !important;
+        }
+        [data-testid="stProgressBar"] [role="progressbar"] > div > div {
+            background-color: #1A1A1A !important;
         }
 
         /* ================================================================
@@ -466,6 +451,28 @@ def inject_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+    # ── Deployment-only Green Theme overrides ──
+    import platform
+    if platform.system() != "Windows":
+        st.markdown(
+            """
+            <style>
+            /* Make progress bar match green theme */
+            [data-testid="stProgressBar"] > div > div > div > div,
+            .stProgress > div > div > div > div,
+            [data-testid="stProgressBar"] [role="progressbar"] > div > div {
+                background-color: #2F5D50 !important;
+            }
+            /* Thicker text area focus ring */
+            div[data-baseweb="textarea"]:focus-within {
+                border-color: #2F5D50 !important;
+                box-shadow: 0 0 0 2px rgba(47,93,80,0.8) !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 # =============================================================================
@@ -810,18 +817,11 @@ def main() -> None:
 
                 with r_col2:
                     if conf is not None:
-                        pct = f"{conf:.1%}"
-                        fill_w = f"{conf * 100:.1f}%"
                         st.markdown(
-                            f"""
-                            <div class="rating-meta" style="margin-bottom:6px;">Model confidence</div>
-                            <div class="custom-progress-wrap">
-                                <div class="custom-progress-fill" style="width:{fill_w};"></div>
-                            </div>
-                            <div class="custom-progress-label">{pct}</div>
-                            """,
+                            '<div class="rating-meta" style="margin-bottom:6px;">Model confidence</div>',
                             unsafe_allow_html=True,
                         )
+                        st.progress(conf, text=f"{conf:.1%}")
 
             # Probability distribution
             if result.get("probabilities"):
