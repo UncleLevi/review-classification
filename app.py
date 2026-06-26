@@ -216,52 +216,68 @@ def inject_styles() -> None:
         .tag-danger  { background: #FDECEA; color: #C0392B; }
         .tag-orange  { background: #FFF3E0; color: #E65100; }
 
-        /* ── Language pill toggle ── */
-        .lang-toggle {
-            display: inline-flex;
-            background: #F0F0F0;
-            border-radius: 8px;
-            padding: 3px;
-            gap: 2px;
-            margin-bottom: 12px;
-        }
-        .lang-btn {
-            padding: 5px 18px;
-            border-radius: 6px;
-            border: none;
-            background: transparent;
+        /* ── Radio button ── */
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p {
             font-size: 14px;
-            font-weight: 500;
-            color: #5F6368;
-            cursor: pointer;
-            transition: background 0.15s, color 0.15s, font-weight 0.15s;
-            font-family: "Inter", sans-serif;
         }
-        .lang-btn.active {
-            background: #2F5D50;
-            color: #FFFFFF;
-            font-weight: 600;
+
+        /* Native accent-color: works on all Streamlit versions */
+        [data-testid="stRadio"] input[type="radio"] {
+            accent-color: #2F5D50 !important;
         }
-        .lang-btn:hover:not(.active) {
-            background: #E0E0E0;
-            color: #1A1A1A;
+
+        /* Mengubah warna border luar saat dipilih */
+        div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] > div:first-child,
+        [data-testid="stRadio"] input[type="radio"]:checked + div > div,
+        [data-baseweb="radio"] div[aria-checked="true"] > div,
+        [data-baseweb="radio"] div[data-checked="true"] > div,
+        label[data-baseweb="radio"][aria-checked="true"] > div {
+            border-color: #2F5D50 !important;
+        }
+
+        /* Mengubah warna titik (dot) bagian dalam saat dipilih */
+        div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] > div:first-child > div,
+        [data-testid="stRadio"] input[type="radio"]:checked + div > div > div,
+        [data-baseweb="radio"] div[aria-checked="true"] > div > div,
+        [data-baseweb="radio"] div[data-checked="true"] > div > div,
+        label[data-baseweb="radio"][aria-checked="true"] > div > div {
+            background-color: #2F5D50 !important;
+        }
+
+        /* Mengubah warna teks radio button yang terpilih */
+        div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] p,
+        [data-testid="stRadio"] label[data-baseweb="radio"][aria-checked="true"],
+        [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
+        [data-testid="stRadio"] input[type="radio"]:checked + div {
+            color: #2F5D50 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Efek saat di-hover */
+        div[data-testid="stRadio"] div[role="radio"]:hover > div:first-child,
+        div[data-testid="stRadio"] label[data-baseweb="radio"]:hover div {
+            border-color: #2F5D50 !important;
         }
 
         /* ── Inputs ── */
-        div[data-testid="stTextArea"] textarea {
+        /* textarea base — target both old and new Streamlit wrapper names */
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stTextAreaRootElement"] textarea {
             border-radius: 6px !important;
             border: 1px solid #E5E5E5 !important;
             background: #FFFFFF !important;
             font-size: 16px !important;
             color: #1A1A1A !important;
             -webkit-appearance: none;
-            outline: none !important;
-            transition: border-color 0.15s, box-shadow 0.15s;
         }
+        /* textarea focus ring */
         div[data-testid="stTextArea"] textarea:focus,
-        div[data-testid="stTextArea"] textarea:focus-visible {
+        div[data-testid="stTextAreaRootElement"] textarea:focus,
+        div[data-testid="stTextArea"]:focus-within,
+        div[data-testid="stTextAreaRootElement"]:focus-within {
             border-color: #2F5D50 !important;
-            box-shadow: 0 0 0 2px rgba(47,93,80,0.15) !important;
+            box-shadow: 0 0 0 2px rgba(47,93,80,0.12) !important;
+            outline: none !important;
         }
         .stSelectbox div[data-baseweb="select"] > div {
             border-radius: 6px !important;
@@ -269,6 +285,7 @@ def inject_styles() -> None:
             background: #FFFFFF !important;
             font-size: 16px !important;
         }
+
 
         /* ── Buttons ── */
         .stButton > button {
@@ -289,16 +306,6 @@ def inject_styles() -> None:
         }
         .stButton > button:active {
             background-color: #1e3b32 !important;
-        }
-        /* Inactive language toggle — scoped via data-testid key */
-        [data-testid="stButton-btn_en"] button.lang-inactive,
-        [data-testid="stButton-btn_id"] button.lang-inactive,
-        button[aria-label="🇺🇸 English"].lang-inactive,
-        button[aria-label="🇮🇩 Indonesian"].lang-inactive {
-            background-color: #F0F0F0 !important;
-            color: #5F6368 !important;
-            border: 1px solid #E0E0E0 !important;
-            font-weight: 500 !important;
         }
         .stDownloadButton > button {
             border-radius: 6px !important;
@@ -728,27 +735,14 @@ def main() -> None:
     with st.container(border=True):
         st.markdown('<div class="section-label">Restaurant review</div>', unsafe_allow_html=True)
 
-        # Language selector — two st.buttons backed by session_state
-        # Active = green (type="primary"), inactive = outlined (type="secondary")
-        if "lang_select" not in st.session_state:
-            st.session_state["lang_select"] = "English"
-
-        lang_is_en = st.session_state["lang_select"] == "English"
-        col_en, col_id, col_rest = st.columns([1, 1, 4])
-        with col_en:
-            en_label = "✔️ English" if lang_is_en else "English"
-            if st.button(en_label, key="btn_en", use_container_width=True,
-                         type="primary" if lang_is_en else "secondary"):
-                st.session_state["lang_select"] = "English"
-                st.rerun()
-        with col_id:
-            id_label = "✔️ Indonesian" if not lang_is_en else "Indonesian"
-            if st.button(id_label, key="btn_id", use_container_width=True,
-                         type="primary" if not lang_is_en else "secondary"):
-                st.session_state["lang_select"] = "Indonesian"
-                st.rerun()
-
-        is_indonesian = not lang_is_en
+        # Language selector
+        lang = st.radio(
+            "Input language",
+            options=["English", "Indonesian"],
+            horizontal=True,
+            key="lang_select",
+        )
+        is_indonesian = lang == "Indonesian"
 
         placeholder = (
             'contoh: "Makanannya enak dan pelayanannya ramah, meski agak lama menunggu."'
