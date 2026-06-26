@@ -29,7 +29,7 @@ FEATURES_PATH   = MODEL_DIR / "lgb_features.pkl"
 # Streamlit page setup
 # =============================================================================
 st.set_page_config(
-    page_title="Restaurant Rating Predictor",
+    page_title="Restaurant Rating Classification",
     page_icon="🍽️",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -384,17 +384,23 @@ def inject_styles() -> None:
         }
 
         /* ── Progress bar ── */
-        [data-testid="stProgressBar"] {
-            border-radius: 4px !important;
+        .custom-progress-wrap {
+            background: #E5E5E5;
+            border-radius: 4px;
+            height: 8px;
+            width: 100%;
+            margin-top: 6px;
         }
-        [data-testid="stProgressBar"] > div > div > div > div {
-            background-color: #1A1A1A !important;
+        .custom-progress-fill {
+            background: #1A1A1A;
+            border-radius: 4px;
+            height: 8px;
         }
-        .stProgress > div > div > div > div {
-            background-color: #1A1A1A !important;
-        }
-        [data-testid="stProgressBar"] [role="progressbar"] > div > div {
-            background-color: #1A1A1A !important;
+        .custom-progress-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1A1A1A;
+            margin-top: 4px;
         }
 
         /* ================================================================
@@ -791,11 +797,18 @@ def main() -> None:
 
                 with r_col2:
                     if conf is not None:
+                        pct = f"{conf:.1%}"
+                        fill_w = f"{conf * 100:.1f}%"
                         st.markdown(
-                            '<div class="rating-meta" style="margin-bottom:6px;">Model confidence</div>',
+                            f"""
+                            <div class="rating-meta" style="margin-bottom:6px;">Model confidence</div>
+                            <div class="custom-progress-wrap">
+                                <div class="custom-progress-fill" style="width:{fill_w};"></div>
+                            </div>
+                            <div class="custom-progress-label">{pct}</div>
+                            """,
                             unsafe_allow_html=True,
                         )
-                        st.progress(conf, text=f"{conf:.1%}")
 
             # Probability distribution
             if result.get("probabilities"):
