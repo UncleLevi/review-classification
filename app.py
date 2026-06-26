@@ -226,7 +226,8 @@ def inject_styles() -> None:
         [data-testid="stRadio"] input[type="radio"]:checked + div > div,
         [data-baseweb="radio"] div[aria-checked="true"] > div,
         [data-baseweb="radio"] div[data-checked="true"] > div,
-        label[data-baseweb="radio"][aria-checked="true"] > div {
+        label[data-baseweb="radio"][aria-checked="true"] > div,
+        [data-testid="stRadio"] [role="radio"][aria-checked="true"] div[class*="st-"] {
             border-color: #2F5D50 !important;
         }
 
@@ -235,8 +236,14 @@ def inject_styles() -> None:
         [data-testid="stRadio"] input[type="radio"]:checked + div > div > div,
         [data-baseweb="radio"] div[aria-checked="true"] > div > div,
         [data-baseweb="radio"] div[data-checked="true"] > div > div,
-        label[data-baseweb="radio"][aria-checked="true"] > div > div {
+        label[data-baseweb="radio"][aria-checked="true"] > div > div,
+        [data-testid="stRadio"] [role="radio"][aria-checked="true"] div[class*="st-"] > div,
+        [data-testid="stRadio"] [role="radio"][aria-checked="true"] div[style*="background"] {
             background-color: #2F5D50 !important;
+        }
+
+        [data-testid="stRadio"] input[type="radio"] {
+            accent-color: #2F5D50 !important;
         }
 
         /* Mengubah warna teks radio button yang terpilih */
