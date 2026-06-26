@@ -255,16 +255,25 @@ def inject_styles() -> None:
         }
 
         /* ── Inputs ── */
-        div[data-baseweb="textarea"] {
+        div[data-baseweb="textarea"],
+        div[data-testid="stTextArea"] div[data-baseweb="textarea"],
+        div[data-testid="stTextAreaRootElement"] div[data-baseweb="textarea"],
+        div[data-testid="stTextArea"] div[data-baseweb="base-input"],
+        div[data-testid="stTextAreaRootElement"] div[data-baseweb="base-input"] {
             border-radius: 6px !important;
             border: 1px solid #E5E5E5 !important;
             background: #FFFFFF !important;
         }
-        div[data-baseweb="textarea"]:focus-within {
+        div[data-baseweb="textarea"]:focus-within,
+        div[data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within,
+        div[data-testid="stTextAreaRootElement"] div[data-baseweb="textarea"]:focus-within,
+        div[data-testid="stTextArea"] div[data-baseweb="base-input"]:focus-within,
+        div[data-testid="stTextAreaRootElement"] div[data-baseweb="base-input"]:focus-within {
             border-color: #2F5D50 !important;
             box-shadow: 0 0 0 2px rgba(47,93,80,0.8) !important;
         }
-        div[data-testid="stTextArea"] textarea {
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stTextAreaRootElement"] textarea {
             font-size: 16px !important;
             color: #1A1A1A !important;
             border: none !important;
@@ -279,7 +288,12 @@ def inject_styles() -> None:
         }
 
         /* ── Buttons ── */
-        .stButton > button {
+        .stButton > button,
+        .stButton button,
+        div[data-testid="stButton"] button,
+        button[data-testid="stBaseButton-primary"],
+        button[data-testid="stBaseButton-secondary"],
+        div[class*="stButton"] button {
             background-color: #2F5D50 !important;
             color: #FFFFFF !important;
             border: none !important;
@@ -291,14 +305,33 @@ def inject_styles() -> None:
             width: 100% !important;
             transition: background-color 0.15s ease !important;
             -webkit-tap-highlight-color: transparent;
+            box-shadow: none !important;
         }
-        .stButton > button:hover {
+        .stButton > button:hover,
+        .stButton button:hover,
+        div[data-testid="stButton"] button:hover,
+        button[data-testid="stBaseButton-primary"]:hover,
+        button[data-testid="stBaseButton-secondary"]:hover,
+        div[class*="stButton"] button:hover {
             background-color: #264A40 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: none !important;
         }
-        .stButton > button:active {
+        .stButton > button:active,
+        .stButton button:active,
+        div[data-testid="stButton"] button:active,
+        button[data-testid="stBaseButton-primary"]:active,
+        button[data-testid="stBaseButton-secondary"]:active,
+        div[class*="stButton"] button:active {
             background-color: #1e3b32 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: none !important;
         }
-        .stDownloadButton > button {
+        .stDownloadButton > button,
+        .stDownloadButton button,
+        div[data-testid="stDownloadButton"] button {
             border-radius: 6px !important;
             font-weight: 600 !important;
             min-height: 2.75rem !important;
@@ -388,16 +421,14 @@ def inject_styles() -> None:
         }
 
         /* ── Progress bar ── */
-        [data-testid="stProgressBar"] {
+        [data-testid="stProgressBar"],
+        .stProgress {
             border-radius: 4px !important;
         }
-        [data-testid="stProgressBar"] > div > div > div > div {
-            background-color: #1A1A1A !important;
-        }
-        .stProgress > div > div > div > div {
-            background-color: #1A1A1A !important;
-        }
-        [data-testid="stProgressBar"] [role="progressbar"] > div > div {
+        [data-testid="stProgressBar"] > div > div > div > div,
+        .stProgress > div > div > div > div,
+        [data-testid="stProgressBar"] [role="progressbar"] > div > div,
+        [data-testid="stProgressBar"] div[data-baseweb="progress-bar"] > div > div {
             background-color: #1A1A1A !important;
         }
 
@@ -451,28 +482,6 @@ def inject_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
-
-    # ── Deployment-only Green Theme overrides ──
-    import platform
-    if platform.system() != "Windows":
-        st.markdown(
-            """
-            <style>
-            /* Make progress bar match green theme */
-            [data-testid="stProgressBar"] > div > div > div > div,
-            .stProgress > div > div > div > div,
-            [data-testid="stProgressBar"] [role="progressbar"] > div > div {
-                background-color: #2F5D50 !important;
-            }
-            /* Thicker text area focus ring */
-            div[data-baseweb="textarea"]:focus-within {
-                border-color: #2F5D50 !important;
-                box-shadow: 0 0 0 2px rgba(47,93,80,0.8) !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
 
 
 # =============================================================================
