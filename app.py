@@ -12,8 +12,6 @@ from deep_translator import GoogleTranslator
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import MinMaxScaler
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from textblob import TextBlob
 
 warnings.filterwarnings("ignore")
 
@@ -51,41 +49,6 @@ class ReviewLengthExtractor(BaseEstimator, TransformerMixin):
         lengths = np.array([len(str(text).split()) for text in X]).reshape(-1, 1)
         return csr_matrix(self.scaler_.transform(lengths))
 
-
-class VADERFeatureExtractor(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-        self.sia_ = SentimentIntensityAnalyzer()
-        scores = np.array([
-            list(self.sia_.polarity_scores(str(text)).values()) for text in X
-        ])
-        self.scaler_ = MinMaxScaler().fit(scores)
-        return self
-
-    def transform(self, X):
-        scores = np.array([
-            list(self.sia_.polarity_scores(str(text)).values()) for text in X
-        ])
-        return csr_matrix(self.scaler_.transform(scores))
-
-
-class TextBlobFeatureExtractor(BaseEstimator, TransformerMixin):
-    def _get_scores(self, X):
-        from textblob import TextBlob
-        return np.array([
-            [TextBlob(str(text)).sentiment.polarity,
-             TextBlob(str(text)).sentiment.subjectivity]
-            for text in X
-        ])
-
-    def fit(self, X, y=None):
-        scores = self._get_scores(X)
-        self.scaler_ = MinMaxScaler().fit(scores)
-        return self
-
-    def transform(self, X):
-        scores = self._get_scores(X)
-        return csr_matrix(self.scaler_.transform(scores))
 
 
 # =============================================================================
@@ -251,6 +214,45 @@ def inject_styles() -> None:
         .tag-success { background: #E8F5E9; color: #2E7D32; }
         .tag-warning { background: #FFF8E1; color: #B8860B; }
         .tag-danger  { background: #FDECEA; color: #C0392B; }
+        .tag-orange  { background: #FFF3E0; color: #E65100; }
+
+        /* ── Radio button ── */
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p {
+            font-size: 14px;
+        }
+
+        /* Mengubah warna border luar saat dipilih */
+        div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] > div:first-child,
+        [data-testid="stRadio"] input[type="radio"]:checked + div > div,
+        [data-baseweb="radio"] div[aria-checked="true"] > div,
+        [data-baseweb="radio"] div[data-checked="true"] > div,
+        label[data-baseweb="radio"][aria-checked="true"] > div {
+            border-color: #2F5D50 !important;
+        }
+
+        /* Mengubah warna titik (dot) bagian dalam saat dipilih */
+        div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] > div:first-child > div,
+        [data-testid="stRadio"] input[type="radio"]:checked + div > div > div,
+        [data-baseweb="radio"] div[aria-checked="true"] > div > div,
+        [data-baseweb="radio"] div[data-checked="true"] > div > div,
+        label[data-baseweb="radio"][aria-checked="true"] > div > div {
+            background-color: #2F5D50 !important;
+        }
+
+        /* Mengubah warna teks radio button yang terpilih */
+        div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] p,
+        [data-testid="stRadio"] label[data-baseweb="radio"][aria-checked="true"],
+        [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked),
+        [data-testid="stRadio"] input[type="radio"]:checked + div {
+            color: #2F5D50 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Efek saat di-hover */
+        div[data-testid="stRadio"] div[role="radio"]:hover > div:first-child,
+        div[data-testid="stRadio"] label[data-baseweb="radio"]:hover div {
+            border-color: #2F5D50 !important;
+        }
 
         /* ── Inputs ── */
         div[data-testid="stTextArea"] textarea {
@@ -385,6 +387,15 @@ def inject_styles() -> None:
         [data-testid="stProgressBar"] {
             border-radius: 4px !important;
         }
+        [data-testid="stProgressBar"] > div > div > div > div {
+            background-color: #1A1A1A !important;
+        }
+        .stProgress > div > div > div > div {
+            background-color: #1A1A1A !important;
+        }
+        [data-testid="stProgressBar"] [role="progressbar"] > div > div {
+            background-color: #1A1A1A !important;
+        }
 
         /* ================================================================
            RESPONSIVE BREAKPOINTS
@@ -442,36 +453,43 @@ def inject_styles() -> None:
 # Helper functions
 # =============================================================================
 CLASS_LABELS = {
-    0: "Negative",
-    1: "Neutral",
-    2: "Positive",
+    0: "1 Star",
+    1: "2 Stars",
+    2: "3 Stars",
+    3: "4 Stars",
+    4: "5 Stars",
 }
-CLASS_STAR_RANGE = {
-    0: "★☆☆☆☆  (1–2 stars)",
-    1: "★★★☆☆  (3 stars)",
-    2: "★★★★★  (4–5 stars)",
+
+STAR_DISPLAY = {
+    0: ("1", "★☆☆☆☆"),
+    1: ("2", "★★☆☆☆"),
+    2: ("3", "★★★☆☆"),
+    3: ("4", "★★★★☆"),
+    4: ("5", "★★★★★"),
 }
 
 
-def sentiment_label(pred: int) -> str:
-    """Return a simple text icon matching the sentiment class."""
-    icons = {0: "Negative (-)", 1: "Neutral (~) ", 2: "Positive (+)"}
-    return icons.get(pred, "")
+def star_label(pred: int) -> tuple[str, str]:
+    """Return (display_number, star_icons) for the predicted class."""
+    return STAR_DISPLAY.get(pred, ("?", "☆☆☆☆☆"))
 
 
 def rating_tag(pred: int) -> str:
-    if pred == 2:
-        return '<span class="tag tag-success">Positive</span>'
-    elif pred == 1:
-        return '<span class="tag tag-warning">Neutral</span>'
-    else:
-        return '<span class="tag tag-danger">Negative</span>'
+    tag_map = {
+        0: ("tag-danger",  "1 Star"),
+        1: ("tag-orange",  "2 Stars"),
+        2: ("tag-warning", "3 Stars"),
+        3: ("tag-success", "4 Stars"),
+        4: ("tag-success", "5 Stars"),
+    }
+    cls, text = tag_map.get(pred, ("tag-warning", "Unknown"))
+    return f'<span class="tag {cls}">{text}</span>'
 
 
 def normalize_prediction(pred_raw) -> int:
-    """Pass-through: model already outputs 0, 1, or 2."""
+    """Clamp model output to valid range 0–4 (representing 1–5 stars)."""
     try:
-        return int(pred_raw)
+        return max(0, min(4, int(pred_raw)))
     except Exception:
         return 0
 
@@ -579,7 +597,23 @@ def get_prediction_bundle(text: str, artifacts: dict) -> dict:
     }
 
 
-def shap_top_words(text: str, artifacts: dict, predicted_class_idx: int, top_n: int = 10) -> pd.DataFrame:
+def shap_top_words(
+    text: str,
+    artifacts: dict,
+    predicted_class_idx: int,
+    top_n: int = 10,
+    word_display_map: dict[str, str] | None = None,
+) -> pd.DataFrame:
+    """Compute SHAP word contributions.
+
+    Parameters
+    ----------
+    text : str
+        The (English) text that was actually fed to the model.
+    word_display_map : dict, optional
+        Mapping from English word → display word (e.g. Indonesian original).
+        When provided, the "Word" column will show the display word.
+    """
     preprocessor  = artifacts["preprocessor"]
     explainer     = artifacts["explainer"]
     feature_names = artifacts["feature_names"]
@@ -608,7 +642,7 @@ def shap_top_words(text: str, artifacts: dict, predicted_class_idx: int, top_n: 
     import re
     text_tokens = set(re.findall(r"[a-z]+", text.lower()))
 
-    NON_WORD_PREFIXES = ("vader_", "textblob_", "char_", "review_length", "length_")
+    NON_WORD_PREFIXES = ("char_", "review_length", "length_")
 
     word_mask = np.array([
         (not any(fn.startswith(p) for p in NON_WORD_PREFIXES))
@@ -621,7 +655,7 @@ def shap_top_words(text: str, artifacts: dict, predicted_class_idx: int, top_n: 
     filtered_names = np.array(feature_names)[word_mask]
 
     if len(filtered_sv) == 0:
-        return pd.DataFrame(columns=["Word", "SHAP Value", "Direction"])
+        return pd.DataFrame(columns=["Word", "SHAP Value"])
 
     pos_idx = np.where(filtered_sv > 0)[0]
     neg_idx = np.where(filtered_sv < 0)[0]
@@ -631,11 +665,18 @@ def shap_top_words(text: str, artifacts: dict, predicted_class_idx: int, top_n: 
 
     top_idx = np.concatenate([top_pos, top_neg])
 
+    # Build display names: use the Indonesian original when available
+    display_names = []
+    for en_word in filtered_names[top_idx]:
+        if word_display_map and en_word in word_display_map:
+            display_names.append(word_display_map[en_word])
+        else:
+            display_names.append(en_word)
+
     top_df = pd.DataFrame({
-        "Word":       filtered_names[top_idx],
+        "Word":       display_names,
         "SHAP Value": filtered_sv[top_idx],
     })
-    top_df["Direction"] = np.where(top_df["SHAP Value"] >= 0, "Raises rating", "Lowers rating")
     return top_df
 
 
@@ -649,8 +690,8 @@ def main() -> None:
     st.markdown(
         """
         <div class="app-header">
-            <div class="app-title">Restaurant Rating Predictor</div>
-            <div class="app-subtitle">Predict sentiment class (Negative, Neutral, Positive) from review text using LightGBM + SHAP</div>
+            <div class="app-title">Restaurant Rating Classification</div>
+            <div class="app-subtitle">Predict star rating (1–5) from restaurant review text using LightGBM + SHAP</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -729,9 +770,7 @@ def main() -> None:
 
             pred       = result["prediction"]
             conf       = result["confidence"]
-            star_range = CLASS_STAR_RANGE.get(pred, "")
-            label      = sentiment_label(pred)
-            hero_color = {0: "#C0392B", 1: "#B8860B", 2: "#2E7D32"}.get(pred, "#1A1A1A")
+            num, stars = star_label(pred)
 
             # Primary result card
             with st.container(border=True):
@@ -741,10 +780,10 @@ def main() -> None:
                         f"""
                         <div style="padding-bottom: 8px;">
                             <div style="margin-bottom: 6px;">
-                                <span class="app-subtitle" style="font-size:12px;">Predicted sentiment</span>
+                                <span class="app-subtitle" style="font-size:12px;">Predicted rating</span>
                             </div>
-                            <div class="rating-hero" style="color:{hero_color};">{label}</div>
-                            <div class="rating-stars" style="font-size:15px;color:#5F6368;letter-spacing:1px;">{star_range}</div>
+                            <div class="rating-hero">{num}/5</div>
+                            <div class="rating-stars" style="font-size:22px;letter-spacing:3px;">{stars}</div>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -760,7 +799,7 @@ def main() -> None:
 
             # Probability distribution
             if result.get("probabilities"):
-                with st.expander("Sentiment probability distribution", expanded=False):
+                with st.expander("Rating probability distribution", expanded=False):
                     prob_df = (
                         pd.DataFrame({
                             "Sentiment": list(result["probabilities"].keys()),
@@ -791,24 +830,41 @@ def main() -> None:
                 unsafe_allow_html=True,
             )
             try:
+                import re
                 import matplotlib.pyplot as plt
                 from matplotlib.patches import Patch
 
                 predicted_class_idx = int(pred)
+
+                # Build English→Indonesian word mapping when input is Indonesian
+                word_display_map = None
+                if is_indonesian and translated_text:
+                    id_tokens = re.findall(r"[a-zA-Z]+", review_text.lower())
+                    en_tokens = re.findall(r"[a-zA-Z]+", translated_text.lower())
+                    # Align by position: each Indonesian word maps to the
+                    # corresponding English word at the same index.
+                    word_display_map = {}
+                    for en_w, id_w in zip(en_tokens, id_tokens):
+                        if en_w != id_w:          # only map when actually different
+                            word_display_map[en_w] = id_w
+                        else:
+                            word_display_map[en_w] = id_w
+
                 shap_df = shap_top_words(
-                    review_text, artifacts,
+                    text_for_model, artifacts,
                     predicted_class_idx=predicted_class_idx,
                     top_n=10,
+                    word_display_map=word_display_map,
                 )
                 shap_df = shap_df.sort_values("SHAP Value", ascending=True).reset_index(drop=True)
 
                 if shap_df.empty:
                     st.caption("No word-level SHAP contributions found for this input.")
                 else:
-                    is_negative = pred == 0
+                    is_low_rating = pred <= 1  # 1–2 stars
 
                     def bar_color(v: float) -> str:
-                        if is_negative:
+                        if is_low_rating:
                             return "#C0392B" if v >= 0 else "#2E7D32"
                         return "#2E7D32" if v >= 0 else "#C0392B"
 
@@ -847,7 +903,24 @@ def main() -> None:
                     st.pyplot(fig, clear_figure=True)
 
                     with st.expander("Feature contribution details", expanded=False):
-                        st.dataframe(shap_df, use_container_width=True, hide_index=True)
+                        display_df = shap_df.copy()
+                        display_df["SHAP Value"] = display_df["SHAP Value"].round(4)
+                        st.dataframe(
+                            display_df,
+                            use_container_width=True,
+                            hide_index=True,
+                            column_config={
+                                "Word": st.column_config.TextColumn(
+                                    "Word",
+                                    width="medium",
+                                ),
+                                "SHAP Value": st.column_config.NumberColumn(
+                                    "SHAP Value",
+                                    format="%.4f",
+                                    width="medium",
+                                ),
+                            },
+                        )
 
             except Exception as exc:
                 st.caption(f"SHAP explanation not available for this input: {exc}")
