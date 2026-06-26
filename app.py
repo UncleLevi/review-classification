@@ -422,14 +422,23 @@ def inject_styles() -> None:
 
         /* ── Progress bar ── */
         [data-testid="stProgressBar"],
+        [data-testid="stProgress"],
         .stProgress {
             border-radius: 4px !important;
         }
         [data-testid="stProgressBar"] > div > div > div > div,
+        [data-testid="stProgress"] > div > div > div > div,
         .stProgress > div > div > div > div,
         [data-testid="stProgressBar"] [role="progressbar"] > div > div,
-        [data-testid="stProgressBar"] div[data-baseweb="progress-bar"] > div > div {
+        [data-testid="stProgress"] [role="progressbar"] > div > div,
+        [data-testid="stProgressBar"] div[data-baseweb="progress-bar"] > div > div,
+        [data-testid="stProgress"] div[data-baseweb="progress-bar"] > div > div,
+        div[data-testid="stProgressBar"] div[style*="width"],
+        div[data-testid="stProgress"] div[style*="width"],
+        .stProgress div[style*="width"] {
             background-color: #1A1A1A !important;
+            background: #1A1A1A !important;
+            accent-color: #1A1A1A !important;
         }
 
         /* ================================================================
